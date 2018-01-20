@@ -68,4 +68,4 @@ def autodiscover():
                 raise
 
 default_app_config = 'xadmin.apps.XAdminConfig'
-# default_app_config = "users.apps.UsersConfig"
+# default_app_config = 'xadmin.apps.UsersConfig'

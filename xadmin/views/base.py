@@ -598,3 +598,72 @@ class ModelAdminView(CommAdminView):
     def has_delete_permission(self, obj=None):
         codename = get_permission_codename('delete', self.opts)
         return ('delete' not in self.remove_permissions) and self.user.has_perm('%s.%s' % (self.app_label, codename))
+
+
+class BaseActionView(BaseAdminObject, View):
+    """ Base Admin view, support some comm attrs."""
+
+    base_template = 'xadmin/base.html'
+    need_site_permission = True
+
+    def __init__(self, request, *args, **kwargs):
+        self.request = request
+        self.request_method = request.method.lower()
+        self.user = request.user
+        
+        self.base_plugins = [p(self) for p in getattr(self,
+                                                      "plugin_classes", [])]
+
+        self.args = args
+        self.kwargs = kwargs
+        self.init_plugin(*args, **kwargs)
+        self.init_request(*args, **kwargs)
+
+    @classonlymethod
+    def as_view(cls):
+        def view(request, *args, **kwargs):
+            self = cls(request, *args, **kwargs)
+
+            if hasattr(self, 'get') and not hasattr(self, 'head'):
+                self.head = self.get
+
+            if self.request_method in self.http_method_names:
+                handler = getattr(
+                    self, self.request_method, self.http_method_not_allowed)
+            else:
+                handler = self.http_method_not_allowed
+
+            return handler(request, *args, **kwargs)
+
+        # take name and docstring from class
+        update_wrapper(view, cls, updated=())
+        view.need_site_permission = cls.need_site_permission
+
+        return view
+
+    def init_request(self, *args, **kwargs):
+        pass
+
+    def init_plugin(self, *args, **kwargs):
+        plugins = []
+        for p in self.base_plugins:
+            p.request = self.request
+            p.user = self.user
+            p.args = self.args
+            p.kwargs = self.kwargs
+            result = p.init_request(*args, **kwargs)
+            if result is not False:
+                plugins.append(p)
+        self.plugins = plugins
+
+    @filter_hook
+    def get_context(self):
+        return {'admin_view': self, 'media': self.media, 'base_template': self.base_template}
+
+    @property
+    def media(self):
+        return self.get_media()
+
+    @filter_hook
+    def get_media(self):
+        return forms.Media()

@@ -6,6 +6,10 @@ from xadmin.layout import *
 from django.utils.translation import ugettext_lazy as _, ugettext
 from .models import EmailVerifyRecord
 from xadmin import views
+
+from django.core.exceptions import PermissionDenied
+from xadmin.views.base import filter_hook,BaseActionView
+from xadmin.util import model_format_dict, model_ngettext
 class UserSettingsAdmin(object):
     model_icon = 'fa fa-cog'
     hidden_menu = True
@@ -53,3 +57,33 @@ class GlobalSetting(object):
     site_footer = "longquan.AIITC"
  
 xadmin.site.register(views.CommAdminView, GlobalSetting)
+
+class zabbixitmes_display_off_action(BaseActionView):
+    action_name = "zabbixitmes_display_off_action"
+    description = u'%(verbose_name_plural)s 展示和采集关闭'
+    model_perm = 'change'
+ 
+    @filter_hook
+    def change_models(self, queryset):
+        n = queryset.count()
+        if n:
+            self.log('change', (u' %(count)d %(items)s. 展示和采集关闭')
+                     % {"count": n, "items": model_ngettext(self.opts, n)})
+            for obj in queryset:
+                obj.display_insert = 0
+                obj.save()
+ 
+    def do_action(self, queryset):
+        if not self.has_change_permission():
+            raise PermissionDenied
+        if self.request.POST:
+            self.change_models(queryset)
+            return None
+    def DeleteSelectedAction(self, queryset):
+        n = queryset.count()
+        if n:
+            self.log('change', (u' %(count)d %(items)s. 展示和采集关闭')
+                     % {"count": n, "items": model_ngettext(self.opts, n)})
+            for obj in queryset:
+                obj.display_insert = 0
+                obj.delete()
