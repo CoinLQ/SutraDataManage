@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import AuthenticationForm
 
 from django.utils.translation import ugettext_lazy, ugettext as _
-
+from .models import SutraEntityModel
 from django.contrib.auth import get_user_model
 
 ERROR_MESSAGE = ugettext_lazy("Please enter the correct username and password "
@@ -45,3 +45,13 @@ class AdminAuthenticationForm(AuthenticationForm):
             elif not self.user_cache.is_active or not self.user_cache.is_staff:
                 raise forms.ValidationError(message)
         return self.cleaned_data
+
+
+class SutraEntityModelForm(forms.ModelForm):
+    def create(self, commit=True):
+        pass
+    def save(self, commit=True):
+        return super(SutraEntityModelForm,self).save(commit=commit)
+    class Meta:
+        fields = ['sutra_name','sutra_code','sutra_remark']
+        model = SutraEntityModel

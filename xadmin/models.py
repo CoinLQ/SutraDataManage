@@ -196,3 +196,10 @@ class EmailVerifyRecord(models.Model):
     email = models.EmailField(max_length=50, verbose_name=u'邮箱')
     send_type = models.CharField(choices=email_choices, max_length=10, verbose_name=u'验证码类型')
     send_time = models.DateTimeField(default=datetime.datetime.now, verbose_name=u'发送时间')
+
+
+class SutraEntityModel(models.Model):
+    sutra_name = models.CharField(max_length = 513,verbose_name=u"藏名称")
+    sutra_code = models.CharField(max_length = 50, verbose_name=u"编码",blank=True)
+    sutra_remark = models.CharField(max_length = 1024,verbose_name=u"备注",blank=True)
+    

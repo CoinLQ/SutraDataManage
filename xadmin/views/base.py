@@ -30,8 +30,10 @@ from django.views.generic import View
 from collections import OrderedDict
 from xadmin.util import static, json, vendor, sortkeypicker
 
-from xadmin.models import Log
-
+from xadmin.models import Log,SutraEntityModel
+from xadmin.forms import SutraEntityModelForm
+from rest_framework import viewsets
+from xadmin.serializers import SutraEntiySerializer
 csrf_protect_m = method_decorator(csrf_protect)
 
 
@@ -667,3 +669,7 @@ class BaseActionView(BaseAdminObject, View):
     @filter_hook
     def get_media(self):
         return forms.Media()
+
+class SutraEntityViewSet(viewsets.ModelViewSet):
+    queryset = SutraEntityModel.objects.all()
+    serializer_class = SutraEntiySerializer

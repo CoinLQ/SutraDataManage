@@ -18,10 +18,14 @@ from django.contrib import admin
 # from django.conf.urls import  include, url
 # from xadmin.plugins import xversion
 import xadmin
+from rest_framework import routers
+from xadmin.views.base import SutraEntityViewSet
 # #version模块自动注册需要版本控制的 Model
 # xversion.register_models()
 
 # xadmin.autodiscover()
+sutramanageRouter = routers.DefaultRouter()
+sutramanageRouter.register(r'sutra_entity', SutraEntityViewSet)
 urlpatterns = [
     # url(r'^admin/', admin.site.urls),
     url(r'^xadmin/',xadmin.site.urls),

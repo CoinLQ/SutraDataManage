@@ -4,7 +4,8 @@ from .models import UserSettings, Log
 from xadmin.layout import *
 
 from django.utils.translation import ugettext_lazy as _, ugettext
-from .models import EmailVerifyRecord
+from .models import EmailVerifyRecord,SutraEntityModel
+from .forms import SutraEntityModelForm
 from xadmin import views
 
 from django.core.exceptions import PermissionDenied
@@ -87,3 +88,8 @@ class zabbixitmes_display_off_action(BaseActionView):
             for obj in queryset:
                 obj.display_insert = 0
                 obj.delete()
+
+@xadmin.sites.register(SutraEntityModel)
+class SutraEntiyModelAdmin(object):
+    form = SutraEntityModelForm
+    list_display = ('sutra_name','sutra_code','sutra_remark')
