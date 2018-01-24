@@ -13,8 +13,8 @@ class LQSutraAdmin(object):
     showSutra.short_description = u'操作'
     showSutra.allow_tags = True
 
-    # search_fields = ['question_text','pub_date'] #可以搜索的字段
-    # list_filter = ['question_text','pub_date']
+    search_fields = ['sid','name']
+    list_filter = ['sid','name']
     # ordering = ['-pub_date',] ##按照倒序排列
 
 class TripitakaAdmin(object):

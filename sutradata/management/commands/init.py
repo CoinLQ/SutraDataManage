@@ -11,6 +11,7 @@ import traceback
 
 from difflib import SequenceMatcher
 import re, json
+import xlrd
 
 def generate_compare_reel(text1, text2):
     """
@@ -53,24 +54,24 @@ class Command(BaseCommand):
     #FUNC_1  handle
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR        
+        self.ImportLQSutra()
+        # #1) call 获得或创建管理员
+        # admin= self.CreateAdmin()
 
-        #1) call 获得或创建管理员
-        admin= self.CreateAdmin()
+        # #2)  create LQSutra 创建龙泉经名 仅仅是名字
+        # lqsutra = self.CreateLQSutra() 
 
-        #2)  create LQSutra 创建龙泉经名 仅仅是名字
-        lqsutra = self.CreateLQSutra() 
-
-        #3)  create Sutra 创建某个版本的佛经对象  
-        #GL = Tripitaka.objects.get(code='GL')
-        #huayan_gl = Sutra(sid='GL000800', tripitaka=GL, code='00080', variant_code='0',
-        #name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)        
-        bandCode='GL'
-        strsid='GL000800'
-        code='00080'
-        var_code='0'
-        sname='大方廣佛華嚴經'
-        t_reels=60
-        huayan_yb=self.CreateSutra(bandCode,strsid,code,var_code,sname,lqsutra,t_reels)   
+        # #3)  create Sutra 创建某个版本的佛经对象  
+        # #GL = Tripitaka.objects.get(code='GL')
+        # #huayan_gl = Sutra(sid='GL000800', tripitaka=GL, code='00080', variant_code='0',
+        # #name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)        
+        # bandCode='GL'
+        # strsid='GL000800'
+        # code='00080'
+        # var_code='0'
+        # sname='大方廣佛華嚴經'
+        # t_reels=60
+        # huayan_yb=self.CreateSutra(bandCode,strsid,code,var_code,sname,lqsutra,t_reels)   
 
         #4)循环依次创建经卷
         #self.ImportSutraText(huayan_yb)
@@ -108,6 +109,56 @@ class Command(BaseCommand):
             print("创建华严经 ID："+strsid)
         lqsutra.save() 
         return lqsutra 
+
+        #FUNC_3 ImportLQSutra 创建龙泉藏经 经名
+        # 4169 4692 开始不连续了
+    def ImportLQSutra(self):       
+        lqsutra=None
+        #清空
+        LQSutra.objects.all().delete() 
+        #从excel中读取
+        BASE_DIR = settings.BASE_DIR
+        sutra_libs_file = 'data/sutra_text/LQBM.xls' #龙泉编码文件
+        
+        # load data
+        data = xlrd.open_workbook(sutra_libs_file)
+        table = data.sheets()[0]
+        nrows = table.nrows
+        ncols = table.ncols
+
+        #解析属性
+        properties = table.row_values(0)
+        resultDatas = list()
+        for i in range(nrows):
+            if i>0 :
+                values = table.row_values(i)
+                id='LQ00'+str(values[0]) #经编号
+                sname=values[1]#经名
+                nvolumns =1
+                try:
+                   
+                    if len(str(values[3]).strip())==0:
+                        nvolumns=0
+                    else:                                           
+                        nvolumns= int (values[3])#卷数                    
+                    lqsutra = LQSutra(sid=id, name=sname, total_reels=nvolumns )                       
+                    lqsutra.save()
+                except:
+                    print('error j='+str(i)+'value:'+str(values[3])+'::'+id+sname+str(nvolumns))
+                    pass                   
+        # strsid='LQ003100'
+        # try :            
+        #     lqsutra = LQSutra.objects.get(sid=strsid) 
+        # except LQSutra.DoesNotExist:  
+        #     print("藏经不存在 ID："+strsid)
+
+        # if (lqsutra):
+        #     print("已经存在藏经 ID:"+strsid)            
+        # else:                             
+        #     lqsutra = LQSutra(sid=strsid, name='大方廣佛華嚴經', total_reels=60)    
+        #     print("创建华严经 ID："+strsid)
+        # lqsutra.save() 
+        return   
 
     #FUNC_4 LQSutra 创建某个版本的佛经
     def CreateSutra(self,bandCode,strsid,code,var_code,sname,lqsutra,t_reels):  
