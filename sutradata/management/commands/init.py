@@ -73,7 +73,7 @@ class Command(BaseCommand):
         huayan_yb=self.CreateSutra(bandCode,strsid,code,var_code,sname,lqsutra,t_reels)   
 
         #4)循环依次创建经卷
-        self.ImportSutraText(huayan_yb)
+        #self.ImportSutraText(huayan_yb)
         return
                              
 
@@ -167,42 +167,42 @@ class Command(BaseCommand):
     #Func_6  ImportSutra 导入经卷
     #先导入 高丽藏第一卷 为例
     #暂时不支持重复导入，还不知道Reel表是否可以支持关键字查询
-    def ImportSutraText(self, huayan_gl,):                                
-        BASE_DIR = settings.BASE_DIR
-        ll=self.GetJingMuData() #获得经目数据
-        #huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,start_vol_page=31, end_vol=14, end_vol_page=37)
+    # def ImportSutraText(self, huayan_gl,):                                
+    #     BASE_DIR = settings.BASE_DIR
+    #     ll=self.GetJingMuData() #获得经目数据
+    #     #huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,start_vol_page=31, end_vol=14, end_vol_page=37)
 
-        #读取经文
-        fullSutraText=''#全部经文
-        OneVolumnText=''#某卷经文
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_1.txt' % huayan_gl.sid)
-        with open(filename, 'r') as f:
-            sutraText = f.read()
+    #     #读取经文
+    #     fullSutraText=''#全部经文
+    #     OneVolumnText=''#某卷经文
+    #     filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_1.txt' % huayan_gl.sid)
+    #     with open(filename, 'r') as f:
+    #         sutraText = f.read()
         
-        lines = sutraText.split('\n')#全部经文行列表
-        prePageIndex=1
-        preVolumnIndex=1
-        for line in lines:     
-            line=line.replace(' ','')                          
-            if not (line.strip() ):#过滤空行
-                continue
+    #     lines = sutraText.split('\n')#全部经文行列表
+    #     prePageIndex=1
+    #     preVolumnIndex=1
+    #     for line in lines:     
+    #         line=line.replace(' ','')                          
+    #         if not (line.strip() ):#过滤空行
+    #             continue
 
-            print(line)
-            arr=line.split(';')               
-            #分卷
-            i=arr[0].find('V')+1
-            p= int ( arr[0][i:i+3])
-            if (p>preVolumnIndex):     
-                #
-            print(arr)
-            OneVolumnText=OneVolumnText+arr[1]+'\n'  
-            #分页
-            i=arr[0].find('P')+1
-            p= int ( arr[0][i:i+2])
-            if (p>prePageIndex):
-                prePageIndex=p
-                OneVolumnText=OneVolumnText+'p\n'              
-        #huayan_gl_1.save()
+    #         print(line)
+    #         arr=line.split(';')               
+    #         #分卷
+    #         i=arr[0].find('V')+1
+    #         p= int ( arr[0][i:i+3])
+    #         if (p>preVolumnIndex):     
+    #             #
+    #         print(arr)
+    #         OneVolumnText=OneVolumnText+arr[1]+'\n'  
+    #         #分页
+    #         i=arr[0].find('P')+1
+    #         p= int ( arr[0][i:i+2])
+    #         if (p>prePageIndex):
+    #             prePageIndex=p
+    #             OneVolumnText=OneVolumnText+'p\n'              
+    #     #huayan_gl_1.save()
 
         # 大藏经第 卷的文本
         #huayan_sutra_1 = Reel(sutra=huayan_gl, reel_no=reel_no, start_vol=vol_no,start_vol_page=start_page_no, end_vol=vol_no, end_vol_page=end_page_no)                    

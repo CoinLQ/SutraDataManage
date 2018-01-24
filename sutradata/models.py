@@ -10,8 +10,8 @@ class Tripitaka(models.Model, TripiMixin):
     name = models.CharField(verbose_name='实体藏经名称', max_length=32, blank=False)
 
     class Meta:
-        verbose_name = '实体藏经'
-        verbose_name_plural = '实体藏经管理'
+        verbose_name = '实体藏'
+        verbose_name_plural = '实体藏'
 
     def __str__(self):
         return '{} ({})'.format(self.name, self.code)
@@ -22,25 +22,26 @@ class LQSutra(models.Model, TripiMixin):
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
 
     class Meta:
-        verbose_name = u"龙泉经目"
-        verbose_name_plural = u"龙泉经目"
+        verbose_name = u"龙泉藏经"
+        verbose_name_plural = u"龙泉藏经"
 
     def __str__(self):
         return '%s: %s' % (self.sid, self.name)
 
 class Sutra(models.Model, TripiMixin):
-    sid = models.CharField(verbose_name='实体藏经|唯一经号编码', editable=True, max_length=8)
-    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
+    sid = models.CharField(verbose_name='编码', editable=True, max_length=8)
+    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True, 
+            blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
+    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE,verbose_name='藏名')#修改显示名1-23
     code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='别本编码', max_length=1, default='0')
-    name = models.CharField(verbose_name='实体经目名称', max_length=64, blank=True)
-    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True, 
-    blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
-    total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
+    name = models.CharField(verbose_name='经名', max_length=64, blank=True)        #修改显示名1-23
+    total_reels = models.IntegerField(verbose_name='应存卷数', blank=True, default=1)#修改显示名1-23
+    comment = models.CharField(verbose_name='备注', max_length=1024, default='')#新增加1-23
 
     class Meta:
-        verbose_name = '实体经目'
-        verbose_name_plural = '实体经目管理'
+        verbose_name = '实体经（经目数据）'
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return '%s: %s' % (self.sid, self.name)
@@ -55,13 +56,13 @@ class LQReel(models.Model):
         verbose_name_plural = '龙泉藏经卷'
         unique_together = (('lqsutra', 'reel_no'),)
 
-class Reel(models.Model):
-    sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE)
+class Reel(models.Model):    
+    sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE)    
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
-    start_vol_page = models.SmallIntegerField('起始册的页序号')
+    start_vol_page = models.SmallIntegerField('起始页')#修改显示名1-23
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止册的页序号')
+    end_vol_page = models.SmallIntegerField('终止页')#修改显示名1-23
     text = models.TextField('经文', default='') #按实际行加了换行符，换页标记为p\n
     fixed = models.BooleanField('是否有调整', default=False)
     f_start_page = models.CharField('起始页ID', max_length=18, default='')
@@ -72,9 +73,10 @@ class Reel(models.Model):
     f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
     f_text = models.TextField('调整经文', default='', null=True)
 
+
     class Meta:
-        verbose_name = '实体藏经卷'
-        verbose_name_plural = '实体藏经卷'
+        verbose_name = '实体卷(详目数据）'
+        verbose_name_plural = verbose_name
         unique_together = (('sutra', 'reel_no'),)
 
     def __str__(self):

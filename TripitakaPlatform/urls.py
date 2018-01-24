@@ -16,15 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.urls import include, path
-
+import xadmin
 from tasks.views import *
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),    
+    path('xadmin/', xadmin.site.urls),
     path('batchtasks/', batchtask_list),
     path('batchtasks/create', BatchTaskCreate.as_view(), name='batchtasks_create'),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('correct/<int:task_id>/reeltext', update_correct_task_result, name='update_correct_task_result'),
-    path('tasks/correct/', correct_task_list, name='correct_task_list'),
+    path('tasks/correct/', correct_task_list, name='correct_task_list') ,     
 ]
