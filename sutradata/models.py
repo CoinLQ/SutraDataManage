@@ -16,6 +16,18 @@ class Tripitaka(models.Model, TripiMixin):
     def __str__(self):
         return '{} ({})'.format(self.name, self.code)
 
+class Volume(models.Model):
+    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
+    vol_no = models.SmallIntegerField(verbose_name='册序号')
+    page_count = models.IntegerField(verbose_name='册页数')
+
+    class Meta:
+        verbose_name = u"实体册"
+        verbose_name_plural = u"实体册"
+
+    def __str__(self):
+        return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
+
 class LQSutra(models.Model, TripiMixin):
     sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=11) #（为"LQ"+ 经序号 + 别本号）
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
@@ -29,15 +41,16 @@ class LQSutra(models.Model, TripiMixin):
         return '%s: %s' % (self.sid, self.name)
 
 class Sutra(models.Model, TripiMixin):
-    sid = models.CharField(verbose_name='编码', editable=True, max_length=8)
+    sid = models.CharField(verbose_name='编码', editable=True, max_length=11)#（为"LQ"+ 经序号 + 别本号）   对应模板第二列
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True, 
-            blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
-    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE,verbose_name='藏名')#修改显示名1-23
-    code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=False)
-    variant_code = models.CharField(verbose_name='别本编码', max_length=1, default='0')
-    name = models.CharField(verbose_name='经名', max_length=64, blank=True)        #修改显示名1-23
-    total_reels = models.IntegerField(verbose_name='应存卷数', blank=True, default=1)#修改显示名1-23
-    comment = models.CharField(verbose_name='备注', max_length=1024, default='')#新增加1-23
+            blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）                            对应模板第一列
+    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE,verbose_name='藏名')#修改显示名1-23 对应模板第二列，要解析前两位
+    variant_code = models.CharField(verbose_name='别本编码', max_length=2, default='0')#修改位数有两位的情况对应模板第二列，要解析横杠后面
+    name = models.CharField(verbose_name='经名', max_length=64, blank=True)        #修改显示名1-23        对应模板第三列
+    total_reels = models.IntegerField(verbose_name='应存卷数', blank=True, default=1)#修改显示名1-23      对应模板第四列
+    comment = models.CharField(verbose_name='备注', max_length=1024, default='')#新增加1-23              对应模板第九列
+
+    code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=True)#暂时没用。
 
     class Meta:
         verbose_name = '实体经（经目数据）'
@@ -56,7 +69,18 @@ class LQReel(models.Model):
         verbose_name_plural = '龙泉藏经卷'
         unique_together = (('lqsutra', 'reel_no'),)
 
-class Reel(models.Model):    
+class Reel(models.Model): 
+    EDITION_TYPE_UNKNOWN = 0 # 未选择
+    EDITION_TYPE_BASE = 1 # 底本
+    EDITION_TYPE_CHECKED = 2 # 对校本
+    EDITION_TYPE_PROOF = 3 # 参校本
+    EDITION_TYPE_CHOICES = (
+        (EDITION_TYPE_UNKNOWN, '未选择'),
+        (EDITION_TYPE_BASE, '底本'),
+        (EDITION_TYPE_CHECKED, '对校本'),
+        (EDITION_TYPE_PROOF, '参校本'),
+    )
+   
     sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE)    
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
@@ -71,8 +95,9 @@ class Reel(models.Model):
     f_end_page = models.CharField('终止页ID', max_length=18, default='')
     f_end_line_no = models.IntegerField('终止页行序号', default=-1)
     f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
-    f_text = models.TextField('调整经文', default='', null=True)
-
+    f_text = models.TextField('调整经文', default='', null=True)    
+    edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
+    comment = models.CharField(verbose_name='备注', max_length=1024, default='')
 
     class Meta:
         verbose_name = '实体卷(详目数据）'
