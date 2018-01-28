@@ -2,6 +2,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from sutradata.models import *
 from tasks.models import *
+from django.db.utils import IntegrityError
+
 
 import TripitakaPlatform.settings
 
@@ -15,7 +17,7 @@ import xlrd
 
 def myTestprint(info):
     # try:
-    #     #print(info)
+    #     print(info)
     # except:
     #     print('myprintError.')
     return
@@ -143,7 +145,7 @@ class Command(BaseCommand):
             pre_sutra_sid=''
             sutra=None
             for i in range(nrows):
-                if i > 0  :
+                if i >0 and i<8  :
                     try:
                         sutra_sid=''
                         reel_no=-1
@@ -258,11 +260,17 @@ class Command(BaseCommand):
                             errorlist.append(a)                                                                                      
 
                         myTestprint('end')
-                    except:
+                    except IntegrityError as e:
+                        errMsg='经号+卷号重复，无法导入此记录。'
                         a=("error: "+str(i+1)+":"+sutra_sid+":"+str(reel_no)+":"+str(start_vol)+":"
-                                          +str(start_vol_page)+":"+str(end_vol)+":"+str(end_vol_page) +'errMsg:'+errMsg)                    
+                                          +str(start_vol_page)+":"+str(end_vol)+":"+str(end_vol_page) +'errMsg:'+errMsg)
                         print(a)                                          
-                        errorlist.append(a)                                                                                      
+                        errorlist.append(a)
+                    except :  
+                        a=("error: "+str(i+1)+":"+sutra_sid+":"+str(reel_no)+":"+str(start_vol)+":"
+                                          +str(start_vol_page)+":"+str(end_vol)+":"+str(end_vol_page) +'errMsg:'+errMsg)
+                        print(a)                                          
+                        errorlist.append(a)  
                     #break                     
             #break        
         
@@ -319,7 +327,7 @@ class Command(BaseCommand):
                         
                         sid=str(values[1])#  经ID                       
                         name=str(values[2]) #name          对应模板第三列
-                        if (   len(name.strip()) <3 ):
+                        if (   len(name.strip()) <2 ):
                             errMsg+='存疑A。 经名存在异常。name:'+name+'。'  
                         # lqsutra       对应模板第一列
                         lqsutra_id=str(values[0]) #经编号  

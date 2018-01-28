@@ -73,6 +73,7 @@ class VolumeAdmin(object):
         t=Tripitaka.objects.get(code=obj.tripitaka.code)
         s=t.__str__()
         return t
+    tripitaka_name.short_description = u'藏名'
 
 class ReelAdmin(object):
     list_display = ['tripitaka_name','sutra_name','reel_no','start_vol','start_vol_page','end_vol','end_vol_page'
@@ -102,17 +103,15 @@ class ReelAdmin(object):
     # ordering = ['-pub_date',] ##按照倒序排列    
  
 
-#  class Reel2Admin(object):
+# class ReelAdmin(object):
 #     list_display = ['tripitaka_name','sutra_name','reel_no','longquan_Name','edition_type','comment'] #自定义显示这两个字段    
-#     def tripitaka_name(self,obj) : #藏名 
-#         t=obj.lqsutra.name)        
-#         return t
+#     def tripitaka_name(self,obj) : #藏名         
+#         return obj.sutra.tripitaka.name
 
-#     def longquan_Name(self,obj) : #藏名 
-#         t=sutr.objects.get(code=obj.sutra.tripitaka.code)
-#         s=t.__str__()
-#         return t
-#     def sutra_name(self,obj) :          
+#     def longquan_Name(self,obj) : #龙泉经名        
+#         return  obj.sutra.lqsutra.name 
+
+#     def sutra_name(self,obj) :  #经名 OK        
 #         return obj.sutra.name
     
 #     sutra_name.short_description = u'经名'
@@ -128,7 +127,7 @@ xadmin.site.register(Tripitaka,TripitakaAdmin)
 xadmin.site.register(Volume,VolumeAdmin) 
 xadmin.site.register(Sutra,SutraAdmin)
 xadmin.site.register(Reel,ReelAdmin) 
-#xadmin.site.register(ReelAdmin2) 
+
 
 class GlobalSetting(object):
     site_title = '龙泉大藏经'   #设置头标题
