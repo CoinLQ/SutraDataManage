@@ -7,7 +7,7 @@ from .models import Sutra,Reel,Volume
 
 #龙泉经目 LQSutra
 class LQSutraAdmin(object):
-    list_display = ['sid','name','total_reels','showSutra'] #自定义显示这两个字段
+    list_display = ['sid','name','author','total_reels','remark','showSutra'] #自定义显示这两个字段
     def showSutra(self,obj) :              
         #xadmin/sutradata/sutra/?_q_=佛说阿弥陀经        
         return '<a href="/xadmin/sutradata/sutra/?_p_lqsutra__id__exact='+str(obj.id)+'">查看版本</a>'
@@ -77,7 +77,7 @@ class VolumeAdmin(object):
 
 class ReelAdmin(object):
     list_display = ['tripitaka_name','sutra_name','reel_no','start_vol','start_vol_page','end_vol','end_vol_page'
-                    ,'edition_type','comment','status_1','status_2','status_3','status_4'] #自定义显示这两个字段    
+                    ,'edition_type','comment','status_1','status_2','status_3','status_4'] #自定义显示这两个字段 
     def tripitaka_name(self,obj) : #藏名 
         t=Tripitaka.objects.get(code=obj.sutra.tripitaka.code)
         s=t.__str__()
@@ -100,7 +100,7 @@ class ReelAdmin(object):
     status_4.short_description= u'识别数据状态'
     # search_fields = ['question_text','pub_date'] #可以搜索的字段
     # list_filter = ['question_text','pub_date']
-    # ordering = ['-pub_date',] ##按照倒序排列    
+    ordering = ['id','reel_no'] ##按照倒序排列    
  
 
 # class ReelAdmin(object):
