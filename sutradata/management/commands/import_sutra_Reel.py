@@ -197,8 +197,8 @@ class Command(BaseCommand):
                         values = table.row_values(i)#第i行数据
                         sid=str(values[1])#  经ID             
                         name=str(values[2]) #name          对应模板第三列
-                        if (   len(name.strip()) <2 ):
-                            errMsg+='存疑A。 经名存在异常。name:'+name+'。'                          
+                        if (   len(name.strip()) ==0 ):
+                            errMsg+='存疑A。 经名为空。name:'+name+'。'                          
                         
                         # lqsutra       对应模板第一列
                         lqsutra_id=str(values[0]) #经编号  
