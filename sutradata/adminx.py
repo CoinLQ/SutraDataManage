@@ -10,13 +10,13 @@ class LQSutraAdmin(object):
     list_display = ['sid','name','author','total_reels','remark','showSutra'] #自定义显示这两个字段
     def showSutra(self,obj) :              
         #xadmin/sutradata/sutra/?_q_=佛说阿弥陀经        
-        return '<a href="/xadmin/sutradata/sutra/?_p_lqsutra__id__exact='+str(obj.id)+'">查看版本</a>'
+        return '<a href="/xadmin/sutradata/sutra/?_p_lqsutra__id__in='+str(obj.id)+'">查看版本</a>'
         #return '<a href="/xadmin/sutradata/sutra/?">查看版本</a>'
     showSutra.short_description = u'操作'
     showSutra.allow_tags = True
 
-    search_fields = ['sid','name']
-    list_filter = ['sid','name']
+    search_fields = ['sid','name','author']
+    list_filter = ['sid','name','author']
     ordering = ['sid',] ##按照倒序排列  -号是倒序
 
 #实体藏 Tripitaka
@@ -62,9 +62,11 @@ class SutraAdmin(object):
     Real_reels.short_description=u'实存卷数'
     list_select_related=False
 
-    search_fields = ['name','lqsutra__id','sid'] #可以搜索的字段    
+    search_fields = ['name','lqsutra__id','sid','total_reels','comment'] #可以搜索的字段    
     free_query_filter=True
     list_filter =['name','lqsutra__id','sid'] 
+    list_display_links = ('name')
+    fields = ('tripitaka','sid','name','total_reels','comment')
     # ordering = ['-pub_date',] ##按照倒序排列    
 
 class VolumeAdmin(object):
@@ -75,13 +77,16 @@ class VolumeAdmin(object):
         return t
     tripitaka_name.short_description = u'藏名'
 
-class ReelAdmin(object):
-    list_display = ['tripitaka_name','sutra_name','reel_no','start_vol','start_vol_page','end_vol','end_vol_page'
-                    ,'edition_type','comment','status_1','status_2','status_3','status_4'] #自定义显示这两个字段 
+class ReelAdmin(object): #
+    list_display = ['tripitaka_name','sutra_name','reel_no','longquan_Name','edition_type','comment',
+                    'start_vol','start_vol_page','end_vol','end_vol_page',
+                    'status_1','status_2','status_3','status_4'] #自定义显示这两个字段 
     def tripitaka_name(self,obj) : #藏名 
         t=Tripitaka.objects.get(code=obj.sutra.tripitaka.code)
         s=t.__str__()
         return t
+    def longquan_Name(self,obj) : #龙泉经名        
+        return  obj.sutra.lqsutra.name 
     def sutra_name(self,obj) :          
         return obj.sutra.name
     def status_1(self,obj):
@@ -94,15 +99,16 @@ class ReelAdmin(object):
         return 'x'
     sutra_name.short_description = u'经名'
     tripitaka_name.short_description = u'藏名'
+    longquan_Name.short_description=u'龙泉经名'
     status_1.short_description= u'数据总状态'
     status_2.short_description= u'图片状态'
     status_3.short_description= u'切分数据状态'
     status_4.short_description= u'识别数据状态'
-    # search_fields = ['question_text','pub_date'] #可以搜索的字段
-    # list_filter = ['question_text','pub_date']
+    search_fields = ['sutra__sid','sutra__name','reel_no','edition_type','comment'] #可以搜索的字段
+    list_filter = ['sutra__sid','sutra__name']
     ordering = ['id','reel_no'] ##按照倒序排列    
- 
-
+    fields = ('sutra','reel_no','edition_type','comment','start_vol','start_vol_page','end_vol','end_vol_page')
+    list_display_links = ('sutra_name')
 # class ReelAdmin(object):
 #     list_display = ['tripitaka_name','sutra_name','reel_no','longquan_Name','edition_type','comment'] #自定义显示这两个字段    
 #     def tripitaka_name(self,obj) : #藏名         
