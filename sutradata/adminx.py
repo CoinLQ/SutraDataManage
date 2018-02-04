@@ -7,7 +7,7 @@ from .models import Sutra,Reel,Volume
 
 #龙泉经目 LQSutra
 class LQSutraAdmin(object):
-    list_display = ['sid','name','author','total_reels','remark','showSutra'] #自定义显示这两个字段
+    list_display = ['sid','variant_code','name','author','total_reels','remark','showSutra'] #自定义显示这两个字段
     def showSutra(self,obj) :              
         #xadmin/sutradata/sutra/?_q_=佛说阿弥陀经        
         return '<a href="/xadmin/sutradata/sutra/?_p_lqsutra__id__in='+str(obj.id)+'">查看版本</a>'
@@ -62,12 +62,12 @@ class SutraAdmin(object):
     Real_reels.short_description=u'实存卷数'
     list_select_related=False
 
-    search_fields = ['name','lqsutra__id','sid','total_reels','comment'] #可以搜索的字段    
+    search_fields = ['name','tripitaka__name','lqsutra__id','sid','total_reels','comment'] #可以搜索的字段    
     free_query_filter=True
-    list_filter =['name','lqsutra__id','sid'] 
+    list_filter =['name','lqsutra__id','sid','comment'] 
     list_display_links = ('name')
     fields = ('tripitaka','sid','name','total_reels','comment')
-    # ordering = ['-pub_date',] ##按照倒序排列    
+    ordering = ['id',] ##按照倒序排列    
 
 class VolumeAdmin(object):
     list_display = ['tripitaka_name','vol_no','page_count'] #自定义显示这两个字段   

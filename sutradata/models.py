@@ -30,6 +30,7 @@ class Volume(models.Model):
 
 class LQSutra(models.Model, TripiMixin):
     sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=11) #（为"LQ"+ 经序号 + 别本号）
+    variant_code = models.CharField(verbose_name='别本编码', max_length=2, default='0')#修改位数有两位的情况对应模板第二列，要解析横杠后面
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
     author = models.CharField(verbose_name='著译者', max_length=255, blank=True)    
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)

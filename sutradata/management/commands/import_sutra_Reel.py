@@ -102,14 +102,17 @@ class Command(BaseCommand):
                         sutra_sid='' ; reel_no=-1
                         start_vol=-1 ; start_vol_page=-1
                         end_vol=-1   ; end_vol_page=-1                    
-                        errMsg=''
+                        errMsg='' ; comment=''
                         myTestprint(i)
                         values = table.row_values(i)  
-                        myTestprint(values)                               
+                        myTestprint(values) 
+                        comment=str(values[8]) 
+                        if (comment == None )                             :
+                            comment=''
 
                         #对应经对象的获得 sutra_sid = '实体藏经的id',第二列   
                         changed , newSutra , errMsg=self.__get_sutra( i, values , tripitaka , 
-                                         errorlist , errMsg ,pre_sutra_sid   ,pre_sutra_name)
+                                         errorlist , errMsg ,pre_sutra_sid   ,pre_sutra_name,comment )
                         if (not changed):
                             pass 
                         elif (changed and newSutra):
@@ -124,32 +127,34 @@ class Command(BaseCommand):
                         #['', 'QS0001', '大般若波羅蜜多經', 502.0, 10.0, 634.0, 10.0, '缺頁', '缺頁', '']                         
                         reel_no,start_vol,start_vol_page,end_vol,end_vol_page,errMsg = self.__get_intColumnValue(
                              values,reel_no,start_vol,start_vol_page,end_vol,end_vol_page,errMsg)
+                        #更新 errMsg、Comment
+                        if (len(errMsg.strip())>0):
+                            errMsg= "行"+str(i+1)+":"+errMsg
+                        if (len(comment)>0 and len(errMsg.strip()) >0 ):
+                            comment=errMsg+'('+comment+')'
                         
                         #创建卷对象
                         reel = Reel(sutra=sutra,reel_no=reel_no, start_vol=start_vol,start_vol_page=start_vol_page
-                                        , end_vol= end_vol, end_vol_page=end_vol_page,comment=errMsg )                       
+                                        , end_vol= end_vol, end_vol_page=end_vol_page,comment=comment )                       
                         reel.save()
-                        if (len(errMsg)>0):
-                            a=("log: "+str(i+1)+":"+sutra_sid+":"+str(reel_no)+":"+str(start_vol)+":"
-                                          +str(start_vol_page)+":"+str(end_vol)+":"+str(end_vol_page) +'errMsg:'+errMsg)                    
-                            myTestprint(a)                                          
-                            errorlist.append(a)                                                                                                           
+                        if (len(errMsg)>0):                                          
+                            myTestprint(errMsg)                                          
+                            errorlist.append(errMsg)                                                                                                           
                         myTestprint('end')
                     except IntegrityError as e:
                         strunique='duplicate key value violates unique constraint "sutradata_reel_sutra_id_reel_no_1dae32be_uniq'
                         err='%s' % e
                         if (err.find(strunique)>-1):
                             errMsg='经号+卷号重复，无法导入此记录。'+err
-                            a="error_a: "
+                            a="(error_a) "
                         else:
                             errMsg=err
-                            a="error_b: "    
-                        a=a+str(i+1)+":"+sutra_sid+":"+str(reel_no)+":"+str(start_vol)+":"+str(start_vol_page)+":"+str(end_vol)+":"+str(end_vol_page) +'errMsg:'+errMsg
+                            a="(error_b) "    
+                        a='行'+str(i+1)+":"+a+errMsg
                         print(a)                                          
                         errorlist.append(a)
                     except :  
-                        a=("error_c: "+str(i+1)+":"+sutra_sid+":"+str(reel_no)+":"+str(start_vol)+":"
-                                          +str(start_vol_page)+":"+str(end_vol)+":"+str(end_vol_page) +'errMsg:'+errMsg)
+                        a='行'+str(i+1)+':(error_c) '+errMsg 
                         print(a)                                          
                         errorlist.append(a)  
                     #break                     
@@ -170,7 +175,11 @@ class Command(BaseCommand):
     # variant_code  对应模板第二列，要解析横杠后面
     # name          对应模板第三列
     # total_reels   对应模板第四列
-    # comment       对应模板第九列    
+    # comment       对应模板第十列    
+    #   A       B           C             D     E             F         G        H           I       J
+    #龙泉编码	高丽初刻编码	實體經名	    卷序號	实际卷数	起始冊碼	起始頁碼	終止頁碼	終止冊碼	備註
+    #LQ0246	   GLCK0001	  大般若波羅蜜多經	481	    4	       1	     65	       86	        1	    备注。。。  
+
     def ImportSutra(self):                   
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = '/data/sutra_text/jingmu'        
@@ -188,52 +197,72 @@ class Command(BaseCommand):
             tripitaka_id=''#藏只有一次
             #解析属性           
             for i in range(nrows):
-                if i >0  :
+                if i > 0   :
                     try:      
                         errMsg='';    lqsutra_id='';   sid=''                        
-                        varindex=-1;  variant_code=''
+                        variant_code=''; code=''
                         name='' ;     total_reels=-1;  comment='';
                         
                         values = table.row_values(i)#第i行数据
                         sid=str(values[1])#  经ID             
-                        name=str(values[2]) #name          对应模板第三列
-                        if (   len(name.strip()) ==0 ):
-                            errMsg+='存疑A。 经名为空。name:'+name+'。'                          
+                        name=str(values[2]).strip() #name          对应模板第三列
+                        if (   len( name ) ==0 ):
+                            errMsg+='存疑A,经名为空。name:'+name+'。'                          
                         
                         # lqsutra       对应模板第一列
-                        lqsutra_id=str(values[0]) #经编号  
+                        lqsutra_id=str(values[0]).strip() #经编号 
+                        lqsutra=None 
                         myTestprint(lqsutra_id)                        
-                        if (len(lqsutra_id)<6 ): # 空编号
-                            errMsg+='存疑C。龙泉编号不存在：'+lqsutra_id
-                            lqsutra=None
+                        if (len(lqsutra_id) == 0 ): # 空编号
+                            errMsg+='存疑C,龙泉编号为空 '                            
+                        elif (len(lqsutra_id)<6 ): # 编号无效 
+                            errMsg+='存疑C,龙泉编号无效：'+lqsutra_id                            
                         else:           
-                            lqsutra_id=self.__get_reel_sutraID(str(values[0])) #经编号      
+                            bRet,lqsutra_id=self.__get_reel_sutraID(str(values[0])) #经编号      
                             myTestprint(lqsutra_id)
-                            try :
-                                lqsutra=LQSutra.objects.get(sid=lqsutra_id.strip())
-                            except:                        
-                                lqsutra=None
-                                errMsg+='存疑C。龙泉编号不存在：'+lqsutra_id                       
+                            if (not bRet ):                                
+                                errMsg+='存疑C,龙泉编号不存在：'+str( values[0] ) 
+                            else:                                
+                                try :
+                                    s=LQSutra.objects.filter(sid=lqsutra_id.strip())
+                                    if (len(s)>0):
+                                        lqsutra=s[0]                                        
+                                except:
+                                    pass
+                                if  (lqsutra == None):                                                              
+                                    errMsg+='存疑C,龙泉编号不存在：'+lqsutra_id
+
+                        #增加逻辑，判断经名是否存在，增加备注信息。2-2                        
+                        if ( ( lqsutra == None )  and  ( not len( name ) ==0 ) ):                            
+                            s=LQSutra.objects.filter(name__contains=name)                            
+                            if( len(s) >0 ):#如果有值，给出提示。
+                                a='，存在%d条经名相似的记录：'%(len(s))                                
+                                for s1 in s :
+                                    a+='[%s,%s] '%(s1.name ,s1.sid )                                       
+                                errMsg+=a        
+                                myTestprint(errMsg)                         
                         
                         # sid =         对应模板第二列                          
-                        if ( len ( sid.strip())<3    ):                            
-                            errMsg+='存疑B。经编号在异常。id：'+sid+' 。'  
+                        bRet,sid=self.__get_reel_sutraID(str(values[1])) #经编号                        
+                        if ( not bRet ):                            
+                            errMsg+='存疑B,经编号在异常。id：'+str(values[1])+' 。'  
                             if (errMsg.find('存疑A') >-1 ) :#不导入的情况。
                                 errMsg+='经编号和经名都不存在，不导入。'
-                                raise '经编号和经名都不存在，不导入。'
+                                raise '经编号和经名都不存在，不导入。'  
                         else:    
-                            sid=self.__get_reel_sutraID(str(values[1])) #经编号                                                                              
                             # tripitaka     对应模板第二列，要解析前两位
                             if len(tripitaka_id)== 0 :
                                 tripitaka_id=sid[0:2]
                                 s=Tripitaka.objects.filter(code=tripitaka_id)
                                 if (len(s)>0):
                                     tripitaka=s[0]                                
-                            variant_code=varindex=sid[-1]# variant_code  对应模板第二列，要解析横杠后面
+                            variant_code=sid[-1]# variant_code  对应模板第二列，要解析横杠后面
+                            code=sid[2:7]#code 
+
 
                             #查看经号是否重复
                             if len( Sutra.objects.filter(sid=sid)) >0 :
-                                errMsg+='存疑D。经编号重复：'+sid    
+                                errMsg+='存疑D,经编号重复：'+sid    
 
                         mytotal_reels=values[3]
                         try :                            
@@ -241,17 +270,20 @@ class Command(BaseCommand):
                         except:
                             pass
                       
-                        # comment       对应模板第九列
+                        # comment       对应模板第9列
                         try :
-                            comment=str(values[8])
+                            comment=str(values[9])
                             if comment== None:
                                 comment=""                                                             
                         except:
                             pass   
                         if (len(errMsg)>0):                                                        
-                            a=("\nlog: "+str(i+1)+":"+str(values[0])+":"+str(values[1])+":"+str(values[2])+":"+str(values[3])+".errmsg:@@@"+errMsg)                    
+                            a=("\n行"+str(i+1)+":"+errMsg)                    
                             myTestprint(a)
-                            comment+='@@@'+errMsg+'@行号：'+str(i+1)+'。'
+                            if (len(comment)>0):
+                                comment=a+"("+comment+")"
+                            else:
+                                comment=a    
                             errorlist.append(a)
 
                         myTestprint(lqsutra_id) ; myTestprint(lqsutra);myTestprint(sid) ; myTestprint(name); 
@@ -260,7 +292,7 @@ class Command(BaseCommand):
 
                         sutra = Sutra(sid=sid,lqsutra=lqsutra, name=name,tripitaka=tripitaka
                                         , variant_code= variant_code, total_reels=total_reels
-                                        , comment=comment , code ='')                       
+                                        , comment=comment , code =code )                       
                         sutra.save()                        
                     except:
                         a=("error: "+str(i+1)+":"+str(values[0])+":"+str(values[1])+":"+str(values[2])+":"+str(values[3])+".errmsg:"+errMsg)                    
@@ -296,7 +328,7 @@ class Command(BaseCommand):
 
         #解析属性       
         for i in range(nrows):
-            if i>0 :
+            if i > 0  :
                 values = table.row_values(i)                               
                 sname=values[1]#经名
                 nvolumns =1
@@ -304,11 +336,12 @@ class Command(BaseCommand):
                 id=''
                 try:
                     id= self.__get_LQSutraID( str(values[0]) )#转化编号
+                    variant_code=id[-1]# variant_code  对应模板第二列，要解析横杠后面
                     if len(str(values[3]).strip())==0:
                         nvolumns=0
                     else:                                           
                         nvolumns= int (values[3])#卷数                    
-                    lqsutra = LQSutra(sid=id, name=sname,author=sauthor, total_reels=nvolumns,remark='' )
+                    lqsutra = LQSutra(sid=id, variant_code=variant_code,name=sname,author=sauthor, total_reels=nvolumns,remark='' )
                     lqsutra.save()
                 except:
                     print('error j='+str(i)+'value:'+str(values[3])+'::'+id+sname+str(nvolumns))
@@ -322,9 +355,15 @@ class Command(BaseCommand):
     #用户数据 like '0123', or '0123-12' -的后面是别本号                   
     def __get_LQSutraID(self,orignid):                  
         hgindex=orignid.find('-') 
+        hgindex2=orignid.find('–') #兼容 –
+        hgindex3=orignid.find('—') #兼容 —
+        
         nbiebenhao=0
-        if hgindex ==4 :#带有横杠的
+        if hgindex ==4 or hgindex2 ==4 or hgindex3 ==4 :#带有横杠的
             nbiebenhao=int(orignid[5:]) 
+            print
+            if (nbiebenhao<0):
+                nbiebenhao*=-1#转正 兼容 ’--‘分隔符
         if (nbiebenhao<=9):
             id='LQ0'+orignid[0:4]+chr(nbiebenhao+48)
         else:
@@ -346,16 +385,28 @@ class Command(BaseCommand):
     #实体藏经编号的转化 excel文件导入的为6位，要规范为系统的8位
     #用户数据是 四位编码 & '-' & 别本号，转化为6位编号，前面加一个0，后面加一位别本号  (0~9a~z)  
     #用户数据 like '0123', or '0123-12' -的后面是别本号                   
-    def __get_reel_sutraID(self,orignid):                  
+    def __get_reel_sutraID(self,orignid):     
+        #判断是否是一个有效的编号：逻辑为第三个字符应该数字
+        if ( orignid ==None or len(orignid) < 3 ):
+            return False,orignid
+        else:
+            nasc=ord(orignid[2:3])
+            if not ( nasc >= 48 and nasc <= 57 ):
+                return False,orignid                    
+
         hgindex=orignid.find('-') 
+        hgindex2=orignid.find('–') #兼容 –
+        hgindex3=orignid.find('—') #兼容 —                        
+
         nbiebenhao=0
-        if hgindex ==6 :#带有横杠的
+        #if hgindex ==6 :#带有横杠的
+        if hgindex ==6 or hgindex2 ==6 or hgindex3 ==6 :#带有横杠的
             nbiebenhao=int(orignid[7:]) 
         if (nbiebenhao <= 9 ) :
             id=orignid[0:2]+'0'+orignid[2:6]+chr(nbiebenhao+48)
         else:
             id=orignid[0:2]+'0'+orignid[2:6]+chr(nbiebenhao+97-10)                
-        return id
+        return True,id
 
 
     #    
@@ -422,14 +473,14 @@ class Command(BaseCommand):
     #导入卷的时候用到的判断经id的子函数
     #主要是获得 sutra_sid \ sutra \ pre_sutra_sid \ pre_sutra_name \ errMsg
                         
-    def __get_sutra(self, i, values ,tripitaka,  errorlist , errMsg , pre_sutra_sid  , pre_sutra_name ):        
+    def __get_sutra(self, i, values ,tripitaka,  errorlist , errMsg , pre_sutra_sid  , pre_sutra_name , comment ):        
         #初始化 
         sutra_sid=''
         sutra=None   
         changed= True # 默认发生了变化     
         myTestprint ("__get_sutra 1 begin")
-        if len( str(values[1]).strip() )>= 3 :#经号 
-            sutra_sid=self.__get_reel_sutraID( str(values[1]) ) #经编号  
+        bRet,sutra_sid=self.__get_reel_sutraID( str(values[1]) ) #经编号  
+        if  bRet :#经号有效            
             myTestprint ("__get_sutra 1 :"+ sutra_sid)
             #是否换了经对象
             if  (pre_sutra_sid == sutra_sid)  :
@@ -444,12 +495,12 @@ class Command(BaseCommand):
                     myTestprint ("__get_sutra 3 通过编号获得经对象 ")
                 else:#如果查不到经对象,就创建一个
                     sutra = Sutra(sid=sutra_sid, name=str(values[2]),tripitaka=tripitaka #tripitaka 的值在前面获取。
-                            , comment='@@@存疑E。经目数据缺失，从详目补充。@行号：'+str(i+1) , )                       
+                            , comment='行号%s：存疑E。经目数据缺失，从详目补充。（%s）'%( str(i+1) ,comment ) , )                       
                     sutra.save()        
                     myTestprint ("__get_sutra 4 : 对应编号的经对象不存在, 新创建经对象")
                 myTestprint(sutra)
-        elif  len( str( values[2] ).strip() ) > 2 :# 看经名是否存在
-            myTestprint (" __get_sutra 5 ,经号不存在,判断经名")
+        elif  len( str( values[2] ).strip() ) >= 2 :# 看经名是否存在
+            myTestprint (" __get_sutra 5 ,经号无效,判断经名")
             newname=str( values[2] ).strip() 
             if  (pre_sutra_name == newname)  :  
                 changed=False  # pre_sutra_name 值 没变   #  sutra 不变, pre_sutra_sid 不变, pre_sutra_name 不变, errMsg  不用写入值
@@ -461,7 +512,7 @@ class Command(BaseCommand):
                 #myTestprint(s)
                 if (len(s)>0):
                     sutra=s[0]
-                    errMsg+='存疑G。经号不存在，通过经名搜索的第一个经。@行号'+str(i+1)                    
+                    errMsg+='存疑G,经号无效，通过经名搜索的第一个经。'
                     myTestprint (" __get_sutra 8  通过经名获得了经对象")                                
                     myTestprint(sutra)
                 #else 经名无法查到,就无法导入了.下面处理.
@@ -475,8 +526,7 @@ class Command(BaseCommand):
             return changed,sutra,errMsg            
         else:# 都不存在，就跳过，记录日志。
             myTestprint (" __get_sutra 11 变化了, 但是没有这个经.记录日志,并返回")
-            a=("log: "+str(values[1])+":"+str(values[2])+":"+str(values[3])+":"
-                        +str(values[4])+":"+str(values[5])+":"+str(values[6]) +'errMsg:经号异常，通过经名也无法获得经数据，无法录入系统。@行号：'+str(i+1))                    
+            a=("行 "+str(i+1)+":经号无效，通过经名也无法获得经数据，无法录入系统。")
             print(a)                                           
             errorlist.append(a)   
             return changed,None,errMsg
@@ -489,34 +539,34 @@ class Command(BaseCommand):
         if self.__is_can_getnum( values[3]): #卷序号                             
             reel_no=int(values[3])
         else:
-            errMsg+='存疑F。第4列：['+str(values[3])+']不是一个数字。'
+            errMsg+='存疑F,第4列：['+str(values[3])+']不是一个数字。'
         myTestprint('reel_no:'+ str(values[3] ) )
         
         #start_vol = ('起始册')        第五列                        
         if self.__is_can_getnum(values[4]) :
             start_vol=int(values[4])
         else:
-            errMsg+='存疑F。第5列：['+str(values[4])+']不是一个数字。'
+            errMsg+='存疑F,第5列：['+str(values[4])+']不是一个数字。'
         
         #start_vol_page = ('起始页')   第六列
         if self.__is_can_getnum(values[5]) :
             start_vol_page=int(values[5])
         else:
-            errMsg+='存疑F。第6列：['+str(values[5])+']不是一个数字。'                            
+            errMsg+='存疑F,第6列：['+str(values[5])+']不是一个数字。'                            
         myTestprint('start_vol_page:'+str(values[5]))
         
         #end_vol = '终止册')           第八列                                                
         if self.__is_can_getnum(values[7]) :
             end_vol=int(values[7])                        
         else:
-            errMsg+='存疑F。第8列：['+str(values[7])+']不是一个数字。'                                                        
+            errMsg+='存疑F,第8列：['+str(values[7])+']不是一个数字。'                                                        
         myTestprint('end_vol:'+str(values[7]))
         
         #end_vol_page = ('终止页')     第七列  
         if self.__is_can_getnum(values[6]) :
             end_vol_page=int(values[6])                                                                        
         else:
-            errMsg+='存疑F。第7列：['+str(values[6])+']不是一个数字。'                                                        
+            errMsg+='存疑F,第7列：['+str(values[6])+']不是一个数字。'                                                        
         myTestprint('end_vol_page:'+str(values[6]))
         
         myTestprint(reel_no)
